@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BACKBENCHER CLASSES</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* THEME MATRIX CONFIGURATIONS */
+        :root, [data-theme="dark"] {
+            --bg-main: #080C10;
+            --card-bg: rgba(26, 33, 48, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #3B82F6;
+            --accent-success: #10B981;
+            --accent-warning: #F59E0B;
+            --accent-danger: #EF4444;
+            --text-main: #F3F4F6;
+            --text-muted: #9CA3AF;
+            --glass-blur: blur(16px);
+        }
+        
+        [data-theme="neon"] {
+            --bg-main: #0B001A;
+            --card-bg: rgba(35, 10, 62, 0.6);
+            --card-border: rgba(217, 70, 239, 0.2);
+            --accent-primary: #D946EF;
+            --accent-success: #06B6D4;
+            --accent-warning: #F43F5E;
+            --accent-danger: #E11D48;
+            --text-main: #FDF4FF;
+            --text-muted: #C084FC;
+        }
+
+        [data-theme="matrix"] {
+            --bg-main: #020604;
+            --card-bg: rgba(6, 25, 14, 0.7);
+            --card-border: rgba(34, 197, 94, 0.3);
+            --accent-primary: #22C55E;
+            --accent-success: #4ADE80;
+            --accent-warning: #A3E635;
+            --accent-danger: #DC2626;
+            --text-main: #DCFCE7;
+            --text-muted: #16A34A;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; transition: background 0.3s ease, color 0.3s ease; background-attachment: fixed; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 1.25rem; flex: 1; }
+        .glass-card { background: var(--card-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--card-border); border-radius: 24px; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        
+        .btn { width: 100%; padding: 1rem 1.5rem; border: none; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; color: #fff; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent-primary), #1D4ED8); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--card-border); color: var(--text-main); }
+        .btn-accent { background: linear-gradient(135deg, var(--accent-success), #059669); }
+        .btn-danger { background: linear-gradient(135deg, var(--accent-danger), #B91C1C); }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
+        .form-control { width: 100%; padding: 1rem; background: rgba(8, 12, 16, 0.6); border: 1px solid var(--card-border); border-radius: 14px; color: var(--text-main); font-size: 1rem; }
+
+        .screen { display: none; animation: fadeIn 0.4s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        header { padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--card-border); background: rgba(8, 12, 16, 0.8); backdrop-filter: var(--glass-blur); position: sticky; top: 0; z-index: 100; }
+        .top-meta-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .header-main-row { display: flex; justify-content: space-between; align-items: center; }
+        
+        .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1.25rem; }
+        .feature-item { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.25rem; text-align: center; cursor: pointer; }
+        .feature-item.active { border-color: var(--accent-primary); background: rgba(59, 130, 246, 0.1); }
+        .feature-item i { font-size: 1.75rem; margin-bottom: 0.75rem; color: var(--accent-primary); }
+        .feature-item h3 { font-size: 0.95rem; font-weight: 600; }
+
+        .option-card { background: rgba(255, 255, 255, 0.04); border: 2px solid var(--card-border); border-radius: 16px; padding: 1.1rem; margin-bottom: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; }
+        .option-card.selected { background: rgba(59, 130, 246, 0.15); border-color: var(--accent-primary); }
+        .option-index { width: 28px; height: 28px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; }
+
+        .leaderboard-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: rgba(255, 255, 255, 0.03); border-radius: 14px; margin-bottom: 0.75rem; border: 1px solid var(--card-border); }
+        .rank-badge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: rgba(255, 255, 255, 0.1); }
+
+        .badge-selector { display: flex; gap: 0.5rem; background: rgba(0, 0, 0, 0.3); padding: 0.35rem; border-radius: 14px; border: 1px solid var(--card-border); overflow-x: auto; }
+        .badge-btn { flex: 1; padding: 0.6rem; border: none; background: transparent; color: var(--text-muted); font-weight: 700; font-size: 0.9rem; border-radius: 10px; cursor: pointer; white-space: nowrap; }
+        .badge-btn.active { background: var(--accent-primary); color: #fff; }
+
+        .content-stream-item { border-left: 4px solid var(--accent-primary); padding: 1rem; background: rgba(255, 255, 255, 0.02); border-radius: 0 12px 12px 0; margin-bottom: 0.85rem; }
+        .archive-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: 16px; padding: 1rem; margin-bottom: 0.75rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        
+        .team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 1rem; }
+        .team-member { background: rgba(255, 255, 255, 0.03); padding: 0.75rem; border-radius: 12px; font-size: 0.85rem; text-align: center; border: 1px solid var(--card-border); }
+        .team-member.host { grid-column: span 2; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); font-weight: 700; color: #fff; }
+
+        .admin-manage-item { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--card-border); padding: 0.75rem; border-radius: 12px; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+
+        /* MODAL CUSTOM STYLES */
+        .insta-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+        .insta-modal.active { display: flex; }
+        .insta-link-card { background: #111827; border: 2px solid var(--accent-primary); width: 100%; max-width: 400px; border-radius: 24px; padding: 1.5rem; box-shadow: 0 0 25px rgba(59, 130, 246, 0.4); }
+        .insta-item-row { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 0.85rem 1.2rem; border-radius: 14px; margin-bottom: 0.65rem; border: 1px solid var(--card-border); }
+        .insta-item-row a { color: #FFF; background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); padding: 0.4rem 0.8rem; border-radius: 10px; text-decoration: none; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.3rem; }
+
+        footer { text-align: center; padding: 2rem 1.25rem; margin-top: auto; border-top: 1px solid var(--card-border); background: rgba(6, 9, 12, 0.9); font-size: 0.85rem; color: var(--text-muted); }
+        #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: #1E293B; border: 1px solid var(--accent-primary); padding: 1rem 1.5rem; border-radius: 16px; z-index: 1100; transition: transform 0.3s ease; opacity: 0; }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="top-meta-bar">
+            <button id="global-insta-trigger" class="btn btn-secondary" style="width:auto; padding:0.35rem 0.75rem; font-size:0.75rem; border-radius:8px; background:linear-gradient(45deg, #405DE6, #E1306C); border:none;"><i class="fa-brands fa-instagram"></i> 👥 Members Insta ID</button>
+            <button id="theme-toggle-engine" class="btn btn-secondary" style="width:auto; padding:0.35rem 0.75rem; font-size:0.75rem; border-radius:8px;"><i class="fa-solid fa-palette"></i> Switch Theme</button>
+        </div>
+        <div class="header-main-row">
+            <div class="logo-area"><h1 id="header-logo-btn" style="cursor:pointer; font-size:1.5rem;"><i class="fa-solid fa-graduation-cap"></i> BACKBENCHER</h1></div>
+            <div><button id="global-admin-nav" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 10px;"><i class="fa-solid fa-lock-open"></i> Admin</button></div>
+        </div>
+    </header>
+
+    <div class="insta-modal" id="insta-links-popup">
+        <div class="insta-link-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <h3 style="font-size:1.1rem; font-weight:800;"><i class="fa-brands fa-instagram" style="color:#E1306C"></i> Members Profile Directory</h3>
+                <i class="fa-solid fa-xmark" id="insta-modal-close" style="cursor:pointer; font-size:1.25rem; color:var(--text-muted)"></i>
+            </div>
+            <div id="insta-directory-list">
+                <div class="insta-item-row"><span>Ashish Jaiswal</span><a href="https://www.instagram.com/_ashish_jaiswal007?igsh=dGNxbXI3MWZ1dGo0" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+                <div class="insta-item-row"><span>Krishna mandal</span><a href="https://www.instagram.com/mr_krishnaa__0.7?igsh=Yzl3aXZvOGJibHlj" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+                <div class="insta-item-row"><span>Ayush pramanik</span><a href="https://www.instagram.com/a_y_u_s_h_m_a_x?igsh=Z2ZzN245aXR4amVm" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+                <div class="insta-item-row"><span>Roshan Sharma</span><a href="https://www.instagram.com/shivansh7277__?igsh=MXhiMnN3bzEzMzQ3ZA==" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+                <div class="insta-item-row"><span>Keshav Kumar</span><a href="https://www.instagram.com/keshav123__x?igsh=b2Q1OGIydGtqNGdn" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+                <div class="insta-item-row"><span>Naitik Jaiswal</span><a id="naitik-dynamic-anchor" href="#" target="_blank"><i class="fa-brands fa-instagram"></i> Visit</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section id="screen-home" class="screen active">
+            <div class="glass-card">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:700; font-size:0.9rem; color:var(--text-muted)">SELECT YOUR STANDARD</label>
+                <div class="badge-selector" id="home-class-selector">
+                    <button class="badge-btn active" data-class="9th">9th Standard</button>
+                    <button class="badge-btn" data-class="10th">10th Standard</button>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-item" id="nav-quiz"><i class="fa-solid fa-bolt" style="color:#F59E0B;"></i><h3>Today's Quiz</h3></div>
+                <div class="feature-item" id="nav-leaderboard"><i class="fa-solid fa-trophy" style="color:#10B981;"></i><h3>Quiz Results</h3></div>
+                <div class="feature-item" id="nav-archive"><i class="fa-solid fa-folder-open" style="color:#3B82F6;"></i><h3>Previous Quizzes</h3></div>
+                <div class="feature-item active" id="nav-homework" data-category="homework"><i class="fa-solid fa-book-open"></i><h3>Homework</h3></div>
+                <div class="feature-item" id="nav-syllabus" data-category="syllabus"><i class="fa-solid fa-scroll"></i><h3>Syllabus</h3></div>
+                <div class="feature-item" id="nav-notes" data-category="notes"><i class="fa-solid fa-note-sticky"></i><h3>Study Notes</h3></div>
+                <div class="feature-item" id="nav-notice" data-category="notice" style="grid-column: span 2; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-bullhorn" style="color:var(--accent-danger);"></i><h3 style="color:#FFF;">Important Notice Board</h3></div>
+            </div>
+
+            <div class="glass-card" style="margin-top: 1.5rem;">
+                <h2 id="live-panel-title" style="font-size:1.15rem; font-weight:800; margin-bottom:1rem;">Class 9th - Homework</h2>
+                <div id="live-content-container"><p style="text-align:center; color:var(--text-muted); padding:1rem;">Loading content...</p></div>
+            </div>
+
+            <div class="glass-card">
+                <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:0.75rem;"><i class="fa-solid fa-users" style="color:var(--accent-primary)"></i> Team Management</h3>
+                <div class="team-grid">
+                    <div class="team-member host"><i class="fa-solid fa-user-shield"></i> Host: Ashish Jaiswal</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Krishna mandal</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Naitik Jaiswal</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Roshan Sharma</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Ayush sharma</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Ayush pramanik</div>
+                    <div class="team-member"><i class="fa-solid fa-user-graduate"></i> Keshav Kumar</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-registration" class="screen">
+            <div class="glass-card">
+                <h2 style="margin-bottom:1.5rem;">Student Registration</h2>
+                <div class="form-group"><label>Full Name</label><input type="text" id="reg-name" class="form-control" placeholder="Enter name"></div>
+                <div class="form-group"><label>District</label><input type="text" id="reg-district" class="form-control" placeholder="Enter district"></div>
+                <div style="display:flex; gap:0.75rem; margin-top:2rem;">
+                    <button id="reg-back-btn" class="btn btn-secondary">Cancel</button>
+                    <button id="reg-start-btn" class="btn btn-accent">Start Exam</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-quiz" class="screen">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <span id="quiz-progress-text" style="font-weight:700;">Question 0/0</span>
+                <span id="quiz-points-display" style="background:rgba(245,158,11,0.15); color:#F59E0B; padding:0.4rem 0.8rem; border-radius:10px; font-weight:800;">0 Points</span>
+            </div>
+            <div class="glass-card">
+                <h3 id="quiz-question-text" style="margin-bottom:1.5rem;">Loading Quiz...</h3>
+                <div id="quiz-options-container"></div>
+                <div style="margin-top:2rem;"><button id="quiz-action-btn" class="btn btn-primary" disabled>Select Option</button></div>
+            </div>
+        </section>
+        <section id="screen-leaderboard" class="screen">
+            <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                    <h2 id="leaderboard-title">Current Leaderboard</h2>
+                    <button id="leaderboard-back-btn" class="btn btn-secondary" style="width:auto; padding:0.5rem 1rem;">Home</button>
+                </div>
+                <div class="badge-selector" id="leaderboard-class-selector" style="margin-bottom:1.25rem;">
+                    <button class="badge-btn active" data-class="9th">9th Class</button>
+                    <button class="badge-btn" data-class="10th">10th Class</button>
+                </div>
+                <div id="leaderboard-target-list"></div>
+            </div>
+        </section>
+
+        <section id="screen-archive" class="screen">
+            <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h2>Previous Quizzes</h2>
+                    <button id="archive-back-btn" class="btn btn-secondary" style="width:auto; padding:0.5rem 1rem;">Back</button>
+                </div>
+                <div id="archive-target-list"></div>
+            </div>
+        </section>
+
+        <section id="screen-admin-login" class="screen">
+            <div class="glass-card" style="max-width: 450px; margin: 2rem auto;">
+                <h2 style="text-align:center; margin-bottom:1.5rem;">Admin Login</h2>
+                <div class="form-group"><label>Password</label><input type="password" id="admin-passkey" class="form-control" placeholder="Password"></div>
+                <div style="display:flex; gap:0.75rem; margin-top:1.5rem;">
+                    <button id="admin-login-back" class="btn btn-secondary">Back</button>
+                    <button id="admin-login-submit" class="btn btn-primary">Login</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-admin-dashboard" class="screen">
+            <div class="glass-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h2>Admin Dashboard</h2>
+                    <button id="admin-logout-btn" class="btn btn-secondary" style="width:auto; padding:0.5rem 1rem; color:#EF4444;">Logout</button>
+                </div>
+
+                <div class="form-group" style="background: rgba(59, 130, 246, 0.05); padding: 1rem; border-radius: 14px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <label style="color:#FFF;"><i class="fa-brands fa-instagram"></i> Edit Naitik Jaiswal Insta URL Link</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" id="admin-naitik-insta-input" class="form-control" style="padding:0.6rem;" placeholder="https://instagram.com/username">
+                        <button id="admin-save-naitik-insta" class="btn btn-accent" style="width:auto; padding:0 1rem; font-size:0.85rem; border-radius:12px;">Save URL</button>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:1.5rem;">
+                    <label>Class Standard</label>
+                    <div class="badge-selector" id="admin-class-selector">
+                        <button class="badge-btn active" data-class="9th">9th Class</button>
+                        <button class="badge-btn" data-class="10th">10th Class</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="admin-category-selector" class="form-control">
+                        <option value="quiz">Daily Quiz (Plain Text Format)</option>
+                        <option value="homework" selected>Homework</option>
+                        <option value="syllabus">Syllabus</option>
+                        <option value="notes">Study Notes</option>
+                        <option value="notice">Important Notice 📢</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Title / Chapter Name</label><input type="text" id="admin-title" class="form-control" placeholder="Enter title"></div>
+                
+                <div id="admin-dynamic-text-panel" class="form-group">
+                    <label>Content Description</label>
+                    <textarea id="admin-body-text" class="form-control" rows="8" placeholder="Enter details here..."></textarea>
+                </div>
+                
+                <div id="admin-dynamic-quiz-panel" class="form-group" style="display:none;">
+                    <label>Paste Questions (Normal Text Paste Format)</label>
+                    <textarea id="quiz-plain-text" class="form-control" rows="8" placeholder="1. Question?&#10;A) Opt 1&#10;B) Opt 2&#10;C) Opt 3&#10;D) Opt 4&#10;Answer: A"></textarea>
+                </div>
+
+                <div style="margin-top:1.5rem;"><button id="admin-submit-cloud" class="btn btn-accent"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Data</button></div>
+
+                <div style="margin-top:2.5rem; border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
+                    <h3 style="font-size:1rem; margin-bottom:1rem; color:var(--accent-warning);"><i class="fa-solid fa-folder-minus"></i> Manage Uploaded Data (Click to Delete)</h3>
+                    <div id="admin-uploaded-list-panel"><p style="font-size:0.85rem; color:var(--text-muted);">Select category/class above to fetch items...</p></div>
+                </div>
+                
+                <div style="margin-top:2.5rem; border-top: 1px solid rgba(239,68,68,0.2); padding-top:1.5rem;">
+                    <h3 style="color:var(--accent-danger); font-size:1rem; margin-bottom:1rem;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone (Reset Panel)</h3>
+                    <div style="display:grid; grid-template-columns:1fr; gap:0.75rem;">
+                        <button id="admin-delete-active-quiz" class="btn btn-danger" style="font-size:0.9rem; padding:0.75rem;"><i class="fa-solid fa-trash"></i> Delete Today's Active Quiz</button>
+                        <button id="admin-delete-leaderboard" class="btn btn-danger" style="font-size:0.9rem; padding:0.75rem; background:linear-gradient(135deg, #F59E0B, #D97706)"><i class="fa-solid fa-users-slash"></i> Clear Active Quiz Leaderboard</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p style="font-weight: 800; font-size: 1.1rem; color: #EF4444; text-shadow: 0 0 10px rgba(239,68,68,0.5); margin-bottom: 0.5rem; letter-spacing: 1px;">SDN ACADEMY'S SYSTEM HANG 🤣</p>
+        <p style="font-weight: 800; font-size: 1.1rem; color: #10B981; text-shadow: 0 0 10px rgba(16,185,129,0.5); margin-bottom: 1rem; letter-spacing: 1px;">JAC BOARD SYSTEM HANG 🤣</p>
+        <p>© BACKBENCHER CLASSES | Made By Ashish Jaiswal</p>
+    </footer>
+    <div id="toast">Notification</div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDMUVtFee8JF7NhZp4IQfsuEl5-TG7Dh2I",
+            authDomain: "backbencher-classes-5ea95.firebaseapp.com",
+            projectId: "backbencher-classes-5ea95",
+            storageBucket: "backbencher-classes-5ea95.firebasestorage.app",
+            messagingSenderId: "406511741235",
+            appId: "1:406511741235:web:344b821deb7b75d0443646"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const state = { 
+            currentClass: '9th', 
+            selectedFeedCategory: 'homework', 
+            adminSelectedClass: '9th', 
+            studentProfile: { name: '', district: '' }, 
+            activeQuizData: [], 
+            quizCurrentIndex: 0, 
+            quizAccumulatedPoints: 0, 
+            quizSelectedOption: null, 
+            leaderboardSelectedClass: '9th',
+            currentQuizId: 'active_session',
+            targetedLeaderboardQuizId: 'active_session',
+            availableThemes: ['dark', 'neon', 'matrix'],
+            activeThemeIndex: 0
+        };
+
+        const screens = { home: document.getElementById('screen-home'), registration: document.getElementById('screen-registration'), quiz: document.getElementById('screen-quiz'), leaderboard: document.getElementById('screen-leaderboard'), archive: document.getElementById('screen-archive'), adminLogin: document.getElementById('screen-admin-login'), adminDashboard: document.getElementById('screen-admin-dashboard') };
+        
+        const DOM = { 
+            homeClassSelector: document.getElementById('home-class-selector'), livePanelTitle: document.getElementById('live-panel-title'), liveContentContainer: document.getElementById('live-content-container'), globalAdminNav: document.getElementById('global-admin-nav'), headerLogoBtn: document.getElementById('header-logo-btn'), regName: document.getElementById('reg-name'), regDistrict: document.getElementById('reg-district'), regBackBtn: document.getElementById('reg-back-btn'), regStartBtn: document.getElementById('reg-start-btn'), quizProgressText: document.getElementById('quiz-progress-text'), quizPointsDisplay: document.getElementById('quiz-points-display'), quizQuestionText: document.getElementById('quiz-question-text'), quizOptionsContainer: document.getElementById('quiz-options-container'), quizActionBtn: document.getElementById('quiz-action-btn'), leaderboardClassSelector: document.getElementById('leaderboard-class-selector'), leaderboardTargetList: document.getElementById('leaderboard-target-list'), leaderboardBackBtn: document.getElementById('leaderboard-back-btn'), leaderboardTitle: document.getElementById('leaderboard-title'), archiveBackBtn: document.getElementById('archive-back-btn'), archiveTargetList: document.getElementById('archive-target-list'), adminPasskey: document.getElementById('admin-passkey'), adminLoginBack: document.getElementById('admin-login-back'), adminLoginSubmit: document.getElementById('admin-login-submit'), adminClassSelector: document.getElementById('admin-class-selector'), adminCategorySelector: document.getElementById('admin-category-selector'), adminTitle: document.getElementById('admin-title'), adminBodyText: document.getElementById('admin-body-text'), adminDynamicTextPanel: document.getElementById('admin-dynamic-text-panel'), adminDynamicQuizPanel: document.getElementById('admin-dynamic-quiz-panel'), quizPlainText: document.getElementById('quiz-plain-text'), adminSubmitCloud: document.getElementById('admin-submit-cloud'), adminLogoutBtn: document.getElementById('admin-logout-btn'), adminDeleteActiveQuiz: document.getElementById('admin-delete-active-quiz'), adminDeleteLeaderboard: document.getElementById('admin-delete-leaderboard'), toast: document.getElementById('toast'), adminUploadedListPanel: document.getElementById('admin-uploaded-list-panel'),
+            // New Dashboard DOM references
+            globalInstaTrigger: document.getElementById('global-insta-trigger'),
+            instaLinksPopup: document.getElementById('insta-links-popup'),
+            instaModalClose: document.getElementById('insta-modal-close'),
+            themeToggleEngine: document.getElementById('theme-toggle-engine'),
+            naitikDynamicAnchor: document.getElementById('naitik-dynamic-anchor'),
+            adminNaitikInstaInput: document.getElementById('admin-naitik-insta-input'),
+            adminSaveNaitikInsta: document.getElementById('admin-save-naitik-insta')
+        };
+
+        function showToast(m) { DOM.toast.innerText = m; DOM.toast.classList.add('show'); setTimeout(() => { DOM.toast.classList.remove('show'); }, 3000); }
+        function navigateTo(k) { Object.keys(screens).forEach(key => { screens[key].classList.toggle('active', key === k); }); window.scrollTo({ top: 0, behavior: 'smooth' }); if(k === 'adminDashboard') { loadAdminManagementList(); fetchNaitikInstaLink(); } }
+
+        function getFormattedDateTime() {
+            const now = new Date();
+            const date = now.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            return `${date} | ${time}`;
+        }
+
+        // Live Real-Time fetcher for Naitik's dynamic link document
+        function fetchNaitikInstaLink() {
+            db.collection('app_meta').doc('naitik_insta').get().then(doc => {
+                if(doc.exists && doc.data().url) {
+                    DOM.naitikDynamicAnchor.href = doc.data().url;
+                    if(DOM.adminNaitikInstaInput) DOM.adminNaitikInstaInput.value = doc.data().url;
+                } else {
+                    DOM.naitikDynamicAnchor.href = "#";
+                }
+            }).catch(()=>{});
+        }
+
+        async function fetchAppContentStream(cat, cls) {
+            DOM.liveContentContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">Syncing...</p>`;
+            try {
+                const snap = await db.collection('app_data').where('classStandard', '==', cls).where('category', '==', cat).get();
+                DOM.liveContentContainer.innerHTML = '';
+                if (snap.empty) { DOM.liveContentContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">No data entries available.</p>`; return; }
+                
+                let localItems = []; snap.forEach(doc => { localItems.push(doc.data()); });
+                localItems.sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+
+                localItems.forEach(d => {
+                    const div = document.createElement('div'); div.className = 'content-stream-item';
+                    if (cat === 'notice') { div.style.borderColor = 'var(--accent-danger)'; div.style.background = 'rgba(239, 68, 68, 0.02)'; }
+                    const displayTime = d.uploadedAt ? d.uploadedAt : '';
+                    if (cat === 'quiz') {
+                        div.innerHTML = `<h4>${d.title}</h4><p style="font-size:0.75rem; color:var(--accent-warning); margin-bottom:0.25rem;">${displayTime}</p><p style="font-size:0.85rem; color:var(--text-muted)">Live Today's Quiz Set is active.</p>`;
+                    } else {
+                        div.innerHTML = `<h4>${d.title}</h4><p style="font-size:0.75rem; color:${cat === 'notice' ? 'var(--accent-danger)' : 'var(--accent-primary)'}; margin-bottom:0.25rem;">${displayTime}</p><p style="font-size:0.85rem; color:var(--text-main); white-space:pre-wrap; margin-top:0.5rem;">${d.bodyText}</p>`;
+                    }
+                    DOM.liveContentContainer.appendChild(div);
+                });
+            } catch (e) { DOM.liveContentContainer.innerHTML = `<p style="text-align:center; color:#EF4444; padding:1.5rem;">Error loading data.</p>`; }
+        }
+
+        let lbUnsub = null;
+        function establishLeaderboardStream(cls, quizId = 'active_session') {
+            if (lbUnsub) lbUnsub(); state.targetedLeaderboardQuizId = quizId;
+            DOM.leaderboardTitle.innerText = quizId === 'active_session' ? "Today's Leaderboard" : "Archive Leaderboard";
+            DOM.leaderboardTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">Loading Rankings...</p>`;
+            
+            lbUnsub = db.collection('quiz_responses').where('classStandard', '==', cls).where('quizIdentifier', '==', quizId)
+                .onSnapshot(snap => {
+                    DOM.leaderboardTargetList.innerHTML = '';
+                    if (snap.empty) { DOM.leaderboardTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">No scores logged for this quiz.</p>`; return; }
+                    const localPlayers = []; snap.forEach(doc => { localPlayers.push(doc.data()); });
+                    localPlayers.sort((a, b) => (b.score || 0) - (a.score || 0));
+                    let idx = 1;
+                    localPlayers.forEach(d => {
+                        const row = document.createElement('div'); row.className = 'leaderboard-item';
+                        row.innerHTML = `<div style="display:flex; align-items:center; gap:0.75rem;"><div class="rank-badge">${idx}</div><div><h4>${d.studentName}</h4><p style="font-size:0.75rem; color:var(--text-muted);">${d.district}</p></div></div><div style="font-weight:800; color:var(--accent-warning);">${d.score} pts</div>`;
+                        DOM.leaderboardTargetList.appendChild(row); idx++;
+                    });
+                }, err => { DOM.leaderboardTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">Unable to process request.</p>`; });
+        }
+        async function loadAdminManagementList() {
+            DOM.adminUploadedListPanel.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">Fetching database entries...</p>`;
+            try {
+                const cat = DOM.adminCategorySelector.value;
+                const snap = await db.collection('app_data').where('classStandard', '==', state.adminSelectedClass).where('category', '==', cat).get();
+                DOM.adminUploadedListPanel.innerHTML = '';
+                if(snap.empty) { DOM.adminUploadedListPanel.innerHTML = `<p style="font-size:0.85rem; color:var(--text-muted);">No entries found to manage.</p>`; return; }
+                
+                snap.forEach(doc => {
+                    const d = doc.data(); const div = document.createElement('div'); div.className = 'admin-manage-item';
+                    div.innerHTML = `<div style="max-width:70%;"><h5 style="font-size:0.85rem; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.title}</h5><p style="font-size:0.7rem; color:var(--text-muted);">${d.uploadedAt || ''}</p></div><button class="btn btn-danger" style="width:auto; padding:0.35rem 0.65rem; font-size:0.75rem; border-radius:8px;"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+                    div.querySelector('button').addEventListener('click', async () => {
+                        if(!confirm(`Delete "${d.title}" definitively?`)) return;
+                        try {
+                            await doc.ref.delete(); showToast("Item erased completely!"); loadAdminManagementList();
+                            if(state.currentClass === state.adminSelectedClass && state.selectedFeedCategory === cat) { fetchAppContentStream(cat, state.currentClass); }
+                        } catch(err) { showToast("Error removing doc."); }
+                    });
+                    DOM.adminUploadedListPanel.appendChild(div);
+                });
+            } catch(e) { DOM.adminUploadedListPanel.innerHTML = `<p style="font-size:0.85rem; color:var(--accent-danger);">Retrieval error occurred.</p>`; }
+        }
+
+        async function loadQuizArchive() {
+            DOM.archiveTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">Loading past quizzes...</p>`;
+            try {
+                const snap = await db.collection('quiz_history').where('classStandard', '==', state.currentClass).get();
+                DOM.archiveTargetList.innerHTML = '';
+                if (snap.empty) { DOM.archiveTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">No previous quizzes found.</p>`; return; }
+                const docsArray = []; snap.forEach(doc => { docsArray.push({ id: doc.id, data: doc.data() }); });
+                docsArray.sort((a, b) => (b.data.timestamp?.seconds || 0) - (a.data.timestamp?.seconds || 0));
+
+                docsArray.forEach(itemObj => {
+                    const d = itemObj.data; const item = document.createElement('div'); item.className = 'archive-item';
+                    item.innerHTML = `<div><h4 style="font-size:0.95rem;">${d.title}</h4><p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;"><i class="fa-solid fa-clock"></i> ${d.uploadedAt || ''}</p></div><button class="btn btn-primary" style="width:auto; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:8px;">View Results</button>`;
+                    item.addEventListener('click', () => { establishLeaderboardStream(state.currentClass, itemObj.id); navigateTo('leaderboard'); });
+                    DOM.archiveTargetList.appendChild(item);
+                });
+            } catch (e) { DOM.archiveTargetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:1.5rem;">No previous quizzes found.</p>`; }
+        }
+
+        async function constructQuizSequence() {
+            try {
+                const snap = await db.collection('app_data').where('classStandard', '==', state.currentClass).where('category', '==', 'quiz').limit(1).get();
+                if (snap.empty) { showToast(`No active quiz for Class ${state.currentClass}`); navigateTo('home'); return; }
+                state.activeQuizData = []; snap.forEach(doc => { const d = doc.data(); if(d.questionsList && Array.isArray(d.questionsList)) { state.activeQuizData = d.questionsList; } });
+                if(state.activeQuizData.length === 0) { showToast("Quiz data model is empty."); navigateTo('home'); return; }
+                state.quizCurrentIndex = 0; state.quizAccumulatedPoints = 0; state.currentQuizId = 'active_session';
+                renderQuizQuestion(); navigateTo('quiz');
+            } catch (e) { showToast("Failed to initiate quiz sequence."); navigateTo('home'); }
+        }
+
+        function renderQuizQuestion() {
+            state.quizSelectedOption = null; DOM.quizActionBtn.disabled = true;
+            const q = state.activeQuizData[state.quizCurrentIndex];
+            DOM.quizProgressText.innerText = `Question ${state.quizCurrentIndex + 1} of ${state.activeQuizData.length}`;
+            DOM.quizPointsDisplay.innerText = `${state.quizAccumulatedPoints} Points`;
+            DOM.quizQuestionText.innerText = q.question; DOM.quizOptionsContainer.innerHTML = '';
+            q.options.forEach((o, idx) => {
+                const c = document.createElement('div'); c.className = 'option-card';
+                c.innerHTML = `<div class="option-index">${['A','B','C','D'][idx]}</div><div style="font-size:0.95rem; font-weight:600;">${o}</div>`;
+                c.addEventListener('click', () => {
+                    document.querySelectorAll('.option-card').forEach(card => card.classList.remove('selected'));
+                    c.classList.add('selected'); state.quizSelectedOption = idx; DOM.quizActionBtn.disabled = false;
+                    DOM.quizActionBtn.innerText = state.quizCurrentIndex === state.activeQuizData.length - 1 ? "Submit Quiz" : "Next Question";
+                });
+                DOM.quizOptionsContainer.appendChild(c);
+            });
+        }
+
+        async function processQuizAction() {
+            const q = state.activeQuizData[state.quizCurrentIndex];
+            if (parseInt(state.quizSelectedOption) === parseInt(q.correctIndex)) { state.quizAccumulatedPoints += 10; showToast("Correct! +10 Points"); } else { showToast("Wrong answer."); }
+            if (state.quizCurrentIndex < state.activeQuizData.length - 1) { state.quizCurrentIndex++; renderQuizQuestion(); } else { await commitQuizResultsToCloud(); }
+        }
+
+        async function commitQuizResultsToCloud() {
+            try {
+                await db.collection('quiz_responses').add({ studentName: state.studentProfile.name, district: state.studentProfile.district, classStandard: state.currentClass, score: state.quizAccumulatedPoints, quizIdentifier: state.currentQuizId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                establishLeaderboardStream(state.currentClass, 'active_session'); navigateTo('leaderboard');
+            } catch (e) { showToast("Cloud upload error."); navigateTo('home'); }
+        }
+
+        function parsePlainTextQuiz(text) {
+            const blocks = text.split(/\n\s*\n/); const parsedQuestions = []; const keyMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+            blocks.forEach(block => {
+                const lines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length >= 6) {
+                    let questionText = lines[0].replace(/^\d+[\.\s\-)]+/, '');
+                    let optA = lines[1].replace(/^[A-Da-d1-4][\.\s\-)]+/, ''); let optB = lines[2].replace(/^[A-Da-d1-4][\.\s\-)]+/, '');
+                    let optC = lines[3].replace(/^[A-Da-d1-4][\.\s\-)]+/, ''); let optD = lines[4].replace(/^[A-Da-d1-4][\.\s\-)]+/, '');
+                    let ansLine = lines[5].toUpperCase(); let matchedAns = ansLine.match(/(?:ANSWER|ANS)[\s:\-]+([A-D])/);
+                    if(matchedAns && matchedAns[1]) { parsedQuestions.push({ question: questionText, options: [optA, optB, optC, optD], correctIndex: keyMap[matchedAns[1]] }); }
+                }
+            });
+            return parsedQuestions;
+        }
+
+        // TRIGGER PIPELINES FOR NOVEL MODULES
+        DOM.globalInstaTrigger.addEventListener('click', () => DOM.instaLinksPopup.classList.add('active'));
+        DOM.instaModalClose.addEventListener('click', () => DOM.instaLinksPopup.classList.remove('remove') || DOM.instaLinksPopup.classList.remove('active'));
+        
+        DOM.themeToggleEngine.addEventListener('click', () => {
+            state.activeThemeIndex = (state.activeThemeIndex + 1) % state.availableThemes.length;
+            const newTheme = state.availableThemes[state.activeThemeIndex];
+            document.documentElement.setAttribute('data-theme', newTheme);
+            showToast(`Theme changed to: ${newTheme.toUpperCase()}`);
+        });
+
+        DOM.adminSaveNaitikInsta.addEventListener('click', async () => {
+            const val = DOM.adminNaitikInstaInput.value.trim();
+            if(!val) { showToast("Enter a valid URL."); return; }
+            try {
+                await db.collection('app_meta').doc('naitik_insta').set({ url: val });
+                showToast("Naitik's profile link saved!"); fetchNaitikInstaLink();
+            } catch(e) { showToast("Failed to save URL."); }
+        });
+
+        DOM.headerLogoBtn.addEventListener('click', () => navigateTo('home'));
+        DOM.globalAdminNav.addEventListener('click', () => navigateTo('adminLogin'));
+        
+        DOM.homeClassSelector.addEventListener('click', e => {
+            const b = e.target.closest('.badge-btn'); if (!b) return;
+            document.querySelectorAll('#home-class-selector .badge-btn').forEach(btn => btn.classList.remove('active'));
+            b.classList.add('active'); state.currentClass = b.dataset.class;
+            let activeText = document.querySelector('.feature-item.active h3')?.innerText || 'Updates';
+            DOM.livePanelTitle.innerText = `Class ${state.currentClass} - ${activeText}`;
+            if (state.selectedFeedCategory) fetchAppContentStream(state.selectedFeedCategory, state.currentClass);
+        });
+
+        document.querySelectorAll('.feature-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.id === 'nav-quiz') navigateTo('registration');
+                else if (item.id === 'nav-leaderboard') { establishLeaderboardStream(state.currentClass, 'active_session'); navigateTo('leaderboard'); }
+                else if (item.id === 'nav-archive') { loadQuizArchive(); navigateTo('archive'); }
+                else {
+                    document.querySelectorAll('.feature-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active'); state.selectedFeedCategory = item.dataset.category;
+                    DOM.livePanelTitle.innerText = `Class ${state.currentClass} - ${item.querySelector('h3').innerText}`;
+                    fetchAppContentStream(state.selectedFeedCategory, state.currentClass);
+                }
+            });
+        });
+
+        DOM.regBackBtn.addEventListener('click', () => navigateTo('home'));
+        DOM.regStartBtn.addEventListener('click', () => {
+            if (!DOM.regName.value.trim() || !DOM.regDistrict.value.trim()) { showToast("All fields required."); return; }
+            state.studentProfile.name = DOM.regName.value.trim(); state.studentProfile.district = DOM.regDistrict.value.trim();
+            constructQuizSequence();
+        });
+        DOM.quizActionBtn.addEventListener('click', processQuizAction);
+        DOM.leaderboardBackBtn.addEventListener('click', () => navigateTo('home'));
+        DOM.archiveBackBtn.addEventListener('click', () => navigateTo('home'));
+        DOM.adminLoginBack.addEventListener('click', () => navigateTo('home'));
+        DOM.adminLoginSubmit.addEventListener('click', () => { if (DOM.adminPasskey.value === "82525681556299744682") { DOM.adminPasskey.value = ''; navigateTo('adminDashboard'); } else { showToast("Access Denied."); } });
+        
+        DOM.adminClassSelector.addEventListener('click', e => {
+            const b = e.target.closest('.badge-btn'); if(!b) return;
+            document.querySelectorAll('#admin-class-selector .badge-btn').forEach(btn => btn.classList.remove('active'));
+            b.classList.add('active'); state.adminSelectedClass = b.dataset.class; loadAdminManagementList();
+        });
+        DOM.adminCategorySelector.addEventListener('change', e => {
+            const isQuiz = e.target.value === 'quiz';
+            DOM.adminDynamicQuizPanel.style.display = isQuiz ? 'block' : 'none'; DOM.adminDynamicTextPanel.style.display = isQuiz ? 'none' : 'block';
+            loadAdminManagementList();
+        });
+
+        DOM.adminSubmitCloud.addEventListener('click', async () => {
+            const cat = DOM.adminCategorySelector.value; const t = DOM.adminTitle.value.trim(); if(!t) { showToast("Title required."); return; }
+            const dtString = getFormattedDateTime();
+            let p = { category: cat, classStandard: state.adminSelectedClass, title: t, uploadedAt: dtString, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            
+            if (cat === 'quiz') {
+                const rawText = DOM.quizPlainText.value.trim(); const processedList = parsePlainTextQuiz(rawText);
+                if(processedList.length === 0) { showToast("Parsing Error!"); return; } p.questionsList = processedList;
+                try {
+                    const dynamicSnap = await db.collection('app_data').where('classStandard', '==', state.adminSelectedClass).where('category', '==', 'quiz').get();
+                    for (const doc of dynamicSnap.docs) {
+                        const historyPayload = doc.data();
+                        await db.collection('quiz_history').add({ title: historyPayload.title, classStandard: historyPayload.classStandard, questionsList: historyPayload.questionsList, uploadedAt: historyPayload.uploadedAt || dtString, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                        await doc.ref.delete();
+                    }
+                } catch(e) {}
+            } else { p.bodyText = DOM.adminBodyText.value.trim(); }
+            
+            try { 
+                await db.collection('app_data').add(p); showToast("Data Synced Successfully!"); 
+                DOM.adminTitle.value = ''; DOM.adminBodyText.value = ''; DOM.quizPlainText.value = '';
+                loadAdminManagementList();
+                if(state.currentClass === state.adminSelectedClass && state.selectedFeedCategory === cat){ fetchAppContentStream(cat, state.currentClass); }
+            } catch (e) { showToast("Upload failed."); }
+        });
+
+        DOM.adminDeleteActiveQuiz.addEventListener('click', async () => {
+            if(!confirm("Delete Today's Active Quiz?")) return;
+            try {
+                const snap = await db.collection('app_data').where('classStandard', '==', state.adminSelectedClass).where('category', '==', 'quiz').get();
+                if(snap.empty) { showToast("No quiz found."); return; } snap.forEach(async doc => { await doc.ref.delete(); });
+                showToast("Active Quiz deleted!"); loadAdminManagementList();
+            } catch(e) { showToast("Deletion failed."); }
+        });
+
+        DOM.adminDeleteLeaderboard.addEventListener('click', async () => {
+            if(!confirm("Clear Active Leaderboard?")) return;
+            try {
+                const snap = await db.collection('quiz_responses').where('classStandard', '==', state.adminSelectedClass).where('quizIdentifier', '==', 'active_session').get();
+                if(snap.empty) { showToast("Already clean."); return; }
+                const batch = db.batch(); snap.forEach(doc => { batch.delete(doc.ref); }); await batch.commit();
+                showToast("Leaderboard cleared!"); establishLeaderboardStream(state.adminSelectedClass, 'active_session');
+            } catch(e) { showToast("Failed to clear."); }
+        });
+
+        DOM.adminLogoutBtn.addEventListener('click', () => navigateTo('home'));
+        DOM.leaderboardClassSelector.addEventListener('click', e => {
+            const b = e.target.closest('.badge-btn'); if(!b) return;
+            document.querySelectorAll('#leaderboard-class-selector .badge-btn').forEach(btn => btn.classList.remove('active'));
+            b.classList.add('active'); state.leaderboardSelectedClass = b.dataset.class; establishLeaderboardStream(state.leaderboardSelectedClass, state.targetedLeaderboardQuizId);
+        });
+
+        window.addEventListener('DOMContentLoaded', () => { fetchNaitikInstaLink(); state.selectedFeedCategory = 'homework'; fetchAppContentStream('homework', state.currentClass); });
+    </script>
+</body>
+</html>
